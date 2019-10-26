@@ -1,7 +1,5 @@
 import math
 import pandas as pd
-
-
 # dataRead() verifies the input data for error free
 try:
 	df=pd.read_csv('Data/GSR_HR_DATA.csv',sep=',')
