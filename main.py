@@ -39,7 +39,6 @@ rr = []
 for row in df.head(index).itertuples():
 	rr.append(int((60000 / row.HR)))
 df['RR'] = rr
-
 # This remove outliers from signal
 rr_without_outliers = hrv.remove_outliers(rr_intervals=rr,  low_rri=300, high_rri=2000)
 # This replace outliers nan values with linear interpolation
@@ -76,5 +75,5 @@ for i in time:
 	min_sec.append(dt.datetime.strptime(m+':'+str(s), '%M:%S').time())
 
 #Features Extractions for GSR
-pt.plot(gsr,min_sec)
+pt.plot(min_sec,gsr)
 pt.show()
