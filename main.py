@@ -1,11 +1,9 @@
-import math
+import datetime as dt
 from builtins import KeyError, AttributeError, set
 import hrvanalysis as hrv
 import pandas as pd
-import tabulate as tb
-from collections import Counter
+from matplotlib import pyplot as pt
 
-import numpy as np
 # dataRead() verifies the input data for error free
 
 try:
@@ -41,7 +39,6 @@ rr = []
 for row in df.head(index).itertuples():
 	rr.append(int((60000 / row.HR)))
 df['RR'] = rr
-
 # This remove outliers from signal
 rr_without_outliers = hrv.remove_outliers(rr_intervals=rr,  low_rri=300, high_rri=2000)
 # This replace outliers nan values with linear interpolation
@@ -66,5 +63,17 @@ print(time_domain_features)
 frequency_domain_features= hrv.get_frequency_domain_features(nn_intervals_list,'welch',128, 'linear')
 print(frequency_domain_features)
 
-#Features Extractions for GSR
+#hrv.plot_psd(nn_intervals_list, method="welch")
+#hrv.plot_distrib(nn_intervals_list, method="lomb")
+gsr = df['GSR'].tolist()
+#Extracting time in mm:ss format
+time = df['Time'].tolist()
+min_sec =[]
+for i in time:
+	m,s = i.split(':')
+	s=int(float(s))
+	min_sec.append(dt.datetime.strptime(m+':'+str(s), '%M:%S').time())
 
+#Features Extractions for GSR
+pt.plot(min_sec,gsr)
+pt.show()
