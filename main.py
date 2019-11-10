@@ -1,79 +1,89 @@
-import datetime as dt
-from builtins import KeyError, AttributeError, set
-import hrvanalysis as hrv
+import biosppy
+import neurokit as nk
 import pandas as pd
-from matplotlib import pyplot as pt
+from matplotlib import pyplot as plt
+import data_pre_processing as dpp
+import hrv_analysis as hrv
+import gsr_analysis as gsra
+import scipy as sp
+import statistics as ss
+'''
+Define HRV Variables
+'''
+mean_rr = sd_rr = sdsd = rmssd = med_rr = mean_hr = max_hr = min_hr = sd_hr = lf = hf = lf_hf = lfnu = hfnu = total_power = vlf = 0
+'''
+Define GSR Variables
+'''
+mean_gsr = med_gsr = sd_gsr = 0
+'''
+Define Accelerometer Variables
+'''
+x = y = z = 0
 
-# dataRead() verifies the input data for error free
+file = '/Users/smileyboy/OneSafety/Data/GSR_HR_DATA.csv'
+df = dpp.data_read(file)
+gsr=df['GSR']
+gsr =gsra.filterGSR(gsr,samplerate=16,seconds=2,scr_treshold=100)
+rgsr = gsr['df']['EDA_Raw'].tolist()
+fgsr = gsr['df']['EDA_Filtered'].tolist()
+peaks= sp.signal.find_peaks(fgsr)
+print(peaks)
+print(ss.mean(fgsr),ss.median(fgsr))
+phasic = gsra.phasicGSRFilter(fgsr,samplerate=16,seconds=2)
+tonic = gsra.tonicGSRFilter(fgsr,samplerate=16,seconds=2)
+#phasic = fgsr[0:50]+fgsr[75:85]+fgsr[85:-1]
+plt.title('Raw/Filtered GSR')
+plt.xlabel('Time(s)')
+plt.ylabel('Skin Conductance')
+plt.plot(rgsr,label='Raw GSR')
+plt.plot(fgsr,label='Filtered GSR')
+plt.legend()
+plt.show()
+plt.plot(phasic,label='Phasic signal')
+plt.xlabel('Time(s)')
+plt.ylabel('Skin Conductance')
+plt.legend()
+plt.show()
+plt.plot(tonic,label='Tonic signal')
+plt.xlabel('Time(s)')
+plt.ylabel('Skin Conductance')
+plt.legend()
+plt.show()
 
-try:
-	df=pd.read_csv('Data/GSR_HR_DATA.csv',sep=',')
-	col = len(df.columns);
-	index = len(df.index);
-	#Round dataframe values to 2 decimls after '.'
-	df=df.round(2)
-	# Clean the data from Nan ,missing and duplicate values
-	df=df.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
-	for row in df.head(index).itertuples():
-		if((row.Time == '-1')|(row.Time == '0')):
-			df = df.drop(row.Index)
-		elif ((row.GSR == -1) | (row.GSR == 0)):
-			df = df.drop(row.Index)
-		elif ((row.HR == -1) | (row.HR == 0)):
-			df = df.drop(row.Index)
-	# Select duplicate rows except first occurrence based on all columns
-	duplicateRowsDF = df[df.duplicated(['Time'])]
-	for i in duplicateRowsDF.itertuples():
-		df = df.drop(i[0])
+file = '/Users/smileyboy/OneSafety/Data/GSR_HR_DATA.csv'
+# Process the shimmer GSR+ data
+df = dpp.data_read(file)
+hr = df['HR']
+hr = hr.tolist()
+# Obtain RR interval list
+rr = dpp.rr_process(hr)
+# Conduct HRV time analysis
+mean_rr , sdnn , sdsd , nni_50,pnni_50,nni_20,pnni_20,rmssd , mednn ,range_rr,cvsd,cvnni, mean_hr ,max_hr ,min_hr ,sd_hr =hrv.time_domain_features(rr)
+# Conduct HRV frequency analysis
+lf, hf, lf_hf, lfnu, hfnu, total_power, vlf = hrv.frequency_domain_features(rr)
+# Conduct HRV poincare analysis
+sd1, sd2, sd1sd2 = hrv.poincare_domain_features(rr)
+# plot hrv data
+print(range_rr,rmssd)
+hrv.hrv.plot.plot_timeseries(rr)
+hrv.hrv.plot.plot_distrib(rr)
+hrv.hrv.plot.plot_poincare(rr)
+hrv.hrv.plot.plot_psd(rr)
 
-except pd.errors.EmptyDataError:
-	print("No columns to parse from file,please re-upload again!")
-except KeyError:
-	raise KeyError('Missing data! Please check HR,GSR and TimeStamp exist')
-except AttributeError:
-	print('Missing data! Please check HR,GSR and TimeStamp data exist')
+'''
+p_gsr=nk.eda_process(gsr,sampling_rate=128,scr_treshold=0.1)
+list_key_value = [ [k,v] for k, v in p_gsr.items() ]
+df=p_gsr['df']
+df=df.round(2)
+df.to_csv('EDA_Filtered.csv',sep=',')
+eda = df['EDA_Raw']
+eda = eda.tolist()
+feda = df['EDA_Filtered']
+feda = feda.tolist()
+df['index']=df.index
+'''
 
-#Data Preprocessing
-# Extracting the RR intervals HR(BPM) ==> HRV(ms): 1bpm =60,000 ms
-rr = []
-for row in df.head(index).itertuples():
-	rr.append(int((60000 / row.HR)))
-df['RR'] = rr
-# This remove outliers from signal
-rr_without_outliers = hrv.remove_outliers(rr_intervals=rr,  low_rri=300, high_rri=2000)
-# This replace outliers nan values with linear interpolation
-interpolated_rr_intervals = hrv.interpolate_nan_values(rr_intervals=rr_without_outliers, interpolation_method="linear")
-df['RR_Interpolated'] = interpolated_rr_intervals
-# This remove ectopic beats from signal
-nn_intervals_list = hrv.remove_ectopic_beats(rr_intervals=interpolated_rr_intervals, method="malik")
-# This replace ectopic beats nan values with linear interpolation
-interpolated_nn_intervals = hrv.interpolate_nan_values(rr_intervals=nn_intervals_list)
-df['NN_Interpolated'] = interpolated_nn_intervals
-# Round dataframe values to 2 decimls after '.'
-df = df.round(2)
-#df['RR'].to_csv(path_or_buf='/Users/smileyboy/PycharmProjects/OneSafety/Data/RR.csv', sep=',')
-
-
-#Features Extractions for Heart Rate
-#Time domain features : Mean_NNI, SDNN, SDSD, RMSSD, Median_NN, Range_NN, CVSD, CV_NNI, Mean_HR, Max_HR, Min_HR, STD_HR
-time_domain_features = hrv.get_time_domain_features(nn_intervals_list)
-print(time_domain_features)
-
-#Frequency domain features : LF, HF, VLF, LH/HF ratio, LFnu, HFnu, Total_Power
-frequency_domain_features= hrv.get_frequency_domain_features(nn_intervals_list,'welch',128, 'linear')
-print(frequency_domain_features)
-
-#hrv.plot_psd(nn_intervals_list, method="welch")
-#hrv.plot_distrib(nn_intervals_list, method="lomb")
-gsr = df['GSR'].tolist()
-#Extracting time in mm:ss format
-time = df['Time'].tolist()
-min_sec =[]
-for i in time:
-	m,s = i.split(':')
-	s=int(float(s))
-	min_sec.append(dt.datetime.strptime(m+':'+str(s), '%M:%S').time())
-
-#Features Extractions for GSR
-pt.plot(min_sec,gsr)
-pt.show()
+# gsr = df['GSR'].tolist()
+# Features Extractions for GSR
+# pt.plot(df['Time'], gsr)
+# pt.show()
