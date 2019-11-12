@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/../PycharmProjects/Human-Activity-Recognition/.idea/Human-Activity-Recognition.iml" filepath="$PROJECT_DIR$/../PycharmProjects/Human-Activity-Recognition/.idea/Human-Activity-Recognition.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/OneSafety.iml" filepath="$PROJECT_DIR$/.idea/OneSafety.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../PycharmProjects/Pysiology/.idea/Pysiology.iml" filepath="$PROJECT_DIR$/../PycharmProjects/Pysiology/.idea/Pysiology.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../PycharmProjects/eda-explorer/.idea/eda-explorer.iml" filepath="$PROJECT_DIR$/../PycharmProjects/eda-explorer/.idea/eda-explorer.iml" />
+    </modules>
+  </component>
+</project>
