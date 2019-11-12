@@ -70,4 +70,10 @@ tree.DecisionTreeClassifier()
 scores = cross_val_score(knn,x,y,cv=5,scoring='accuracy')
 print(scores)
 
+# print the contents of each training and testing set
+print('{} {:^61} {}'.format('Iteration', 'Training set observations', 'Testing set observations'))
+for iteration, data in enumerate(kf, start=1):
+    print('{:^9} {} {:^25}'.format(iteration, data[0], str(data[1])))
+
+
 
